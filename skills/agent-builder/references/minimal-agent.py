@@ -11,14 +11,25 @@ Usage:
     3. Type commands, 'q' to quit
 """
 
-from anthropic import Anthropic
+from dotenv import load_dotenv
 from pathlib import Path
 import subprocess
 import os
 
-# Configuration
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+load_dotenv()
+
+# Configuration — supports AWS Bedrock (default) or direct Anthropic API
+PROVIDER = os.getenv("PROVIDER", "bedrock").lower()
 MODEL = os.getenv("MODEL_NAME", "claude-sonnet-4-20250514")
+
+if PROVIDER == "bedrock":
+    from anthropic import AnthropicBedrock
+    client = AnthropicBedrock(aws_region=os.getenv("AWS_REGION", "us-east-1"))
+else:
+    from anthropic import Anthropic
+    if os.getenv("ANTHROPIC_BASE_URL"):
+        os.environ.pop("ANTHROPIC_AUTH_TOKEN", None)
+    client = Anthropic(base_url=os.getenv("ANTHROPIC_BASE_URL"))
 WORKDIR = Path.cwd()
 
 # System prompt - keep it simple
